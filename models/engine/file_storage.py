@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """This module defines a class to manage file storage for hbnb clone"""
 import json
+from models.base_model import BaseModel
 
 
 class FileStorage:
@@ -8,8 +9,12 @@ class FileStorage:
     __file_path = 'file.json'
     __objects = {}
 
-    def all(self):
+    def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
+        if cls:
+            cls_name = cls.__name__ if type(cls) == type else cls
+            return {k: v for k, v in
+                    FileStorage.__objects.items() if str(cls_name) in k}
         return FileStorage.__objects
 
     def new(self, obj):
@@ -35,16 +40,15 @@ class FileStorage:
         from models.amenity import Amenity
         from models.review import Review
 
-        classes = {
-                    'BaseModel': BaseModel, 'User': User, 'Place': Place,
-                    'State': State, 'City': City, 'Amenity': Amenity,
-                    'Review': Review
-                  }
-        try:
-            temp = {}
-            with open(FileStorage.__file_path, 'r') as f:
-                temp = json.load(f)
-                for key, val in temp.items():
-                        self.all()[key] = classes[val['__class__']](**val)
-        except FileNotFoundError:
-            pass
+    def delete(self, obj=None):
+        """Deletes obj from __objects if it's inside"""
+
+        if obj:
+            obj_key = "{}.{}".format(type(obj).__name__, obj.id)
+            if obj_key in FileStorage.__objects:
+                del FileStorage.__objects[obj_key]
+
+    def close(self):
+        """Close the file storage by reloading the JSON file"""
+
+        self.reload()
